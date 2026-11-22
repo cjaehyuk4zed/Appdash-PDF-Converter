@@ -1,0 +1,19 @@
+{
+  "name": "PDF - IMG Converter",
+  "description": "Private PDF and image conversion, resizing and measured file-size targets",
+  "type": "service",
+  "group": "Utilities",
+  "gateway": {
+    "adapter": "process",
+    "workingDirectory": "C:\\Apps\\Appdash-PDF-Converter",
+    "start": {
+      "executable": "C:\\Apps\\Appdash-PDF-Converter\\.venv\\Scripts\\python.exe",
+      "args": ["run.py"]
+    },
+    "stop": { "executable": "", "args": [] },
+    "healthUrl": "http://127.0.0.1:8765/api/ready",
+    "openUrl": "http://127.0.0.1:8765/",
+    "timeoutSeconds": 300,
+    "readinessSeconds": 30
+  }
+}

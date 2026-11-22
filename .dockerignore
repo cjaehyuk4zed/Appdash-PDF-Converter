@@ -1,0 +1,12 @@
+.venv
+.venv-linux
+.runtime
+.git
+__pycache__
+.pytest_cache
+.ruff_cache
+test-results
+tests
+requirements-dev.txt
+.env*
+appdash-gateway-config*.json
