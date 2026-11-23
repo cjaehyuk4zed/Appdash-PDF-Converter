@@ -1,6 +1,7 @@
 """Conversion code. Called only inside disposable worker processes."""
 import io
 import math
+import os
 import re
 import shutil
 import warnings
@@ -225,13 +226,16 @@ def inspect_file(payload):
                 count = len(pdf)
                 if not 0 < count <= payload["page_limit"]:
                     raise ValueError("PDF has no pages or exceeds the page-count limit.")
-                with closing(pdf.get_page(0)) as page:
-                    width, height = page.get_size()
+                page_sizes = []
+                for index in range(count):
+                    with closing(pdf.get_page(index)) as page:
+                        page_sizes.append([round(value) for value in page.get_size()])
+                width, height = page_sizes[0]
         except pdfium.PdfiumError as error:
             raise ValueError("Cannot open PDF. Check the file and its password.") from error
         item = {"path": str(path), "kind": "pdf", "password": payload.get("password", "")}
         image = render_pdf(item, 72, payload["pixel_limit"], 360, 440)
-        info = {"kind": "pdf", "format": "PDF", "pages": count, "width": round(width), "height": round(height), "unit": "pt"}
+        info = {"kind": "pdf", "format": "PDF", "pages": count, "width": width, "height": height, "unit": "pt", "page_sizes": page_sizes}
         if payload.get("password"):
             notes.append("Output files will not be password-protected.")
     else:
@@ -246,8 +250,16 @@ def inspect_file(payload):
                     raise ValueError("Image exceeds the page-count limit.")
                 if fmt != "TIFF" and getattr(source, "n_frames", 1) > 1:
                     notes.append("Only the first frame/primary image will be imported.")
+                page_sizes = []
+                for index in range(count):
+                    source.seek(index)
+                    size = source.size
+                    if source.getexif().get(274) in (5, 6, 7, 8):
+                        size = size[::-1]
+                    page_sizes.append(list(size))
+                source.seek(0)
                 image = ImageOps.exif_transpose(source).copy()
-                info = {"kind": "image", "format": fmt, "pages": count, "width": image.width, "height": image.height, "unit": "px"}
+                info = {"kind": "image", "format": fmt, "pages": count, "width": image.width, "height": image.height, "unit": "px", "page_sizes": page_sizes}
         except (OSError, Image.DecompressionBombError, Image.DecompressionBombWarning) as error:
             raise ValueError("Cannot open image, or it exceeds the pixel safety limit.") from error
     image.thumbnail((360, 440), Image.Resampling.LANCZOS)
@@ -256,6 +268,22 @@ def inspect_file(payload):
     image.save(payload["thumbnail"], "PNG")
     image.close()
     return {**info, "warnings": notes}
+
+
+def page_thumbnail(payload):
+    Image.MAX_IMAGE_PIXELS = payload["pixel_limit"]
+    image = load_image(payload["item"], Options(operation="image_convert", dpi=72, max_width=360, max_height=440), payload["pixel_limit"])
+    if image.mode not in ("RGB", "RGBA", "L", "LA", "P", "1"):
+        image = image.convert("RGB")
+    path = Path(payload["thumbnail"])
+    temporary = path.with_name(f".{path.name}.{os.getpid()}")
+    try:
+        image.save(temporary, "PNG")
+        temporary.replace(path)
+    finally:
+        image.close()
+        temporary.unlink(missing_ok=True)
+    return {}
 
 
 def strip_jpeg_metadata(source, destination):

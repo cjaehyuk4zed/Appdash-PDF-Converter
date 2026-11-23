@@ -67,7 +67,7 @@ The settings panel keeps **Image size & resolution / 이미지 크기·해상도
 
 Image input: **JPEG, PNG, WebP, TIFF, BMP, GIF, AVIF, HEIC/HEIF**. Image output: **JPEG, PNG, WebP, TIFF, BMP, AVIF**. Startup checks report which encoders are available. Multipage TIFFs are expanded into selectable pages. Animated GIF/WebP/AVIF and multi-image HEIF files import only their first frame/primary image, with a notice.
 
-Mixed PDFs and images can be uploaded, but each tool displays the inputs it accepts. Page checkboxes, rotation and up/down controls are under **Choose pages, rotate & arrange**. A PDF page range applies to each uploaded PDF and intersects the checked pages. A range can also specify ordering, such as `3, 1-2`.
+Mixed PDFs and images can be uploaded, but each tool displays the inputs it accepts. Each page appears as one file card with its thumbnail, name, dimensions, file size, selection checkbox and rotation/ordering controls. Use the drag handles or up/down buttons to reorder pages; drag handles also support the keyboard up/down arrows. A PDF page range applies to each uploaded PDF and intersects the checked pages. A range can also specify ordering, such as `3, 1-2`.
 
 ### Quality, dimensions and bytes
 
@@ -112,7 +112,7 @@ The service runs one ASGI server process and one conversion job at a time. Nativ
 | `CONVERTER_MAX_FILE_MB` | `100` | Maximum bytes per uploaded file, in decimal MB |
 | `CONVERTER_MAX_BATCH_MB` | `250` | Maximum HTTP request body, including multipart overhead |
 | `CONVERTER_MAX_PAGES` | `500` | Maximum input pages and selected pages per job |
-| `CONVERTER_MAX_PIXELS` | `40000000` | Maximum decoded input or rendered page pixels |
+| `CONVERTER_MAX_PIXELS` | `60000000` | Maximum decoded input or rendered page pixels |
 | `CONVERTER_MAX_OUTPUT_MB` | `500` | Aggregate output safety budget per job |
 | `CONVERTER_JOB_TIMEOUT` | `600` | Conversion deadline in seconds; inspection is capped at 60 seconds |
 | `CONVERTER_RETENTION_SECONDS` | `3600` | Temporary-file retention |

@@ -12,6 +12,20 @@ def app(tmp_path):
     return create_app(Config(data_dir=tmp_path / "runtime", allowed_hosts=["testserver"], timeout=60))
 
 
+def test_default_pixel_limit_and_environment_override(monkeypatch, tmp_path):
+    from converter.engine import check_pixels
+
+    monkeypatch.delenv("CONVERTER_MAX_PIXELS", raising=False)
+    config = Config(data_dir=tmp_path)
+    assert config.max_pixels == 60000000
+    check_pixels(5782, 7700, config.max_pixels)
+    check_pixels(10000, 6000, config.max_pixels)
+    with pytest.raises(ValueError, match="safety limit"):
+        check_pixels(10000, 6001, config.max_pixels)
+    monkeypatch.setenv("CONVERTER_MAX_PIXELS", "40000000")
+    assert Config(data_dir=tmp_path).max_pixels == 40000000
+
+
 def upload(client, path):
     client.get("/")
     with path.open("rb") as stream:
@@ -68,6 +82,45 @@ def test_security_boundaries_and_invalid_inputs(app, image_path):
         response = client.post("/api/jobs", json={"selections": [{"file_id": asset["id"]}], "options": {"operation": "pdf_to_images"}})
         assert response.status_code == 422
         assert "password" not in str(client.get("/api/ready").json())
+
+
+@pytest.mark.parametrize("kind", ["pdf", "tiff"])
+def test_page_card_dimensions_thumbnails_cache_and_validation(app, tmp_path, kind):
+    import io
+    from pathlib import Path
+    from PIL import Image
+    from reportlab.pdfgen import canvas
+
+    path = tmp_path / f"pages.{kind}"
+    if kind == "pdf":
+        document = canvas.Canvas(str(path))
+        for size, color in [((120, 160), (1, 0, 0)), ((220, 140), (0, 0, 1))]:
+            document.setPageSize(size)
+            document.setFillColorRGB(*color)
+            document.rect(0, 0, *size, fill=1, stroke=0)
+            document.showPage()
+        document.save()
+    else:
+        with Image.new("RGB", (120, 160), "red") as first, Image.new("RGB", (220, 140), "blue") as second:
+            first.save(path, save_all=True, append_images=[second])
+    with TestClient(app) as client:
+        asset = upload(client, path)
+        assert asset["page_sizes"] == [[120, 160], [220, 140]]
+        url = f"/api/files/{asset['id']}/thumbnail"
+        for page, color in [(0, (255, 0, 0)), (1, (0, 0, 255))]:
+            response = client.get(url, params={"page": page})
+            assert response.status_code == 200
+            with Image.open(io.BytesIO(response.content)) as thumbnail:
+                assert thumbnail.size == tuple(asset["page_sizes"][page])
+                assert thumbnail.convert("RGB").getpixel((10, 10)) == color
+        cached = Path(app.state.store.assets[asset["id"]]["path"]).parent / "thumbnail-1.png"
+        modified = cached.stat().st_mtime_ns
+        assert client.get(url, params={"page": 1}).status_code == 200
+        assert cached.stat().st_mtime_ns == modified
+        for page in (-1, 2, "oops", "1.5"):
+            assert client.get(url, params={"page": page}).status_code == 422
+        client.cookies.clear()
+        assert client.get(url, params={"page": 1}).status_code == 404
 
 
 def test_cancel_queued_and_active_jobs_and_delete_guard(app, noise_path):
