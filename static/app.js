@@ -120,7 +120,8 @@ function renderPages(focusPage = null) {
     ]) { const button = node('button', '', text); button.type = 'button'; button.setAttribute('aria-label', `${t(label)}: ${t('Select {name}, page {page}', { name: file.name, page: page.page + 1 })}`); button.title = button.getAttribute('aria-label'); button.onclick = action; actions.append(button); }
     const remove = node('button', 'remove-file', '×'); remove.type = 'button'; remove.title = t('Remove {name}', { name: file.name }); remove.setAttribute('aria-label', remove.title);
     remove.onclick = () => removeFile(file.id);
-    row.append(handle, checkbox, thumbnail, info, remove, actions);
+    actions.append(remove);
+    row.append(handle, checkbox, thumbnail, info, actions);
     list.append(row);
   });
   list.scrollTop = scrollTop;

@@ -28,14 +28,15 @@
 @media(pointer:coarse){.page-item button{min-width:36px;min-height:44px}.page-item{gap:5px}}
 
 .file-list{max-height:520px;overflow:auto}
-.file-card.page-item{display:grid;grid-template-columns:24px 18px 44px minmax(0,1fr) 28px;gap:6px 9px;padding:12px 0}
+.file-card.page-item{display:grid;grid-template-columns:24px 18px 44px minmax(0,1fr) auto;gap:6px 9px;padding:12px 0}
 .file-card .file-thumb{width:44px;height:44px}
 .page-item input{margin:0}
-.page-actions{grid-column:4 / -1;display:flex;gap:6px}
+.page-actions{display:flex;align-items:center;gap:6px}
 .page-actions button{min-width:32px;border:1px solid #e3eae7;border-radius:4px}
 .page-item.unselected .file-thumb,.page-item.unselected .file-info{opacity:.5}
 .order-section{border-top:0;padding-bottom:10px}
-@media(max-width:600px){.file-card.page-item{column-gap:6px;grid-template-columns:24px 18px 44px minmax(0,1fr) 26px}.page-actions{grid-column:3 / -1}}
+@media(max-width:600px){.file-card.page-item{column-gap:6px;grid-template-columns:24px 18px 36px minmax(0,1fr) auto}.file-card .file-thumb{width:36px;height:36px}.page-actions{gap:4px}.page-actions button{min-width:26px;padding:3px 4px}}
+@media(max-width:400px){.page-actions{display:grid;grid-template-columns:repeat(2,32px)}}
 
 .file-card.page-item .drag-handle{min-width:24px;padding:3px 0}
-.file-card.page-item .remove-file{min-width:0;padding:3px}
+.file-card.page-item .remove-file{width:30px;min-width:30px;justify-self:center;padding:3px}
