@@ -13,6 +13,7 @@ from converter.models import Options
 def test_image_output_codecs(tmp_path, image_path, fmt):
     result, directory = convert(tmp_path, [item(image_path)], format=fmt, max_width=320)
     output = result["outputs"][0]
+    assert (directory / output["name"]).stem == "sample_001"
     assert output["target_met"] is None
     with Image.open(directory / output["name"]) as image:
         assert image.size == (320, 240)
@@ -37,6 +38,7 @@ def test_impossible_target_is_not_reported_as_success(tmp_path, image_path):
 def test_pdf_page_selection_and_rotation(tmp_path, pdf_path):
     result, directory = convert(tmp_path, [item(pdf_path, "pdf", 0), item(pdf_path, "pdf", 1)], operation="pdf_to_images", format="png", pages="2", dpi=144)
     assert len(result["outputs"]) == 1
+    assert result["outputs"][0]["name"] == "document_001.png"
     with Image.open(directory / result["outputs"][0]["name"]) as image:
         assert image.size == (720, 960)
 
@@ -214,7 +216,13 @@ def test_output_safety_budget(tmp_path, noise_path):
 
 
 def test_separate_pdf_outputs(tmp_path, image_path):
+    import zipfile
+
     result, directory = convert(tmp_path, [item(image_path), item(image_path)], operation="images_to_pdf", split=True)
     assert len(result["outputs"]) == 2
-    assert len({output["name"] for output in result["outputs"]}) == 2
+    assert [output["name"] for output in result["outputs"]] == ["sample_001.pdf", "sample_002.pdf"]
     assert all(len(PdfReader(directory / output["name"]).pages) == 1 for output in result["outputs"])
+    with zipfile.ZipFile(directory / "results.zip") as archive:
+        assert archive.namelist() == ["sample_001.pdf", "sample_002.pdf"]
+        for output in result["outputs"]:
+            assert archive.read(output["name"]) == (directory / output["name"]).read_bytes()

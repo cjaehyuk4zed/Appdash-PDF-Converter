@@ -69,6 +69,8 @@ Image input: **JPEG, PNG, WebP, TIFF, BMP, GIF, AVIF, HEIC/HEIF**. Image output:
 
 Mixed PDFs and images can be uploaded, but each tool displays the inputs it accepts. Each page appears as one file card with its thumbnail, name, dimensions, file size, selection checkbox and rotation/ordering controls. Use the drag handles or up/down buttons to reorder pages; drag handles also support the keyboard up/down arrows. A PDF page range applies to each uploaded PDF and intersects the checked pages. A range can also specify ordering, such as `3, 1-2`.
 
+Output filenames use the source filename without its extension, followed by the output sequence: `document_001.png`, `document_002.png`, and so on. The same names appear in individual downloads and the ZIP archive.
+
 ### Quality, dimensions and bytes
 
 - **Quality Select / 화질 선택** uses the selected format, quality and dimensions. The slider remains visible for lossless formats. Selecting Lossless shows 100; moving the slider switches to Custom without changing the selected output format. PNG/TIFF remain lossless, and BMP remains uncompressed. Lowering the slider in lossless WebP switches off its lossless option. Lossy encoder quality is limited to 1–95; 100 is the lossless UI indicator.
